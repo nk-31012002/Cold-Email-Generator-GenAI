@@ -1,37 +1,81 @@
 import streamlit as st
-from langchain_community.document_loaders import WebBaseLoader
-
+import os
+import requests
+from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader
 from chains import Chain
 from portfolio import Portfolio
 from utils import clean_text
 
+def get_github_data(username):
+    if not username: return ""
+    try:
+        response = requests.get(f"https://api.github.com/users/{username}/repos")
+        if response.status_code == 200:
+            repos = response.json()
+            langs = set([r['language'] for r in repos if r['language']])
+            return f"Tech stack from GitHub: {', '.join(list(langs)[:5])}"
+    except:
+        return ""
+    return ""
+
+st.markdown("""
+    <style>
+    .stAppDeployButton {display:none;}
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
 
 def create_streamlit_app(llm, portfolio, clean_text):
-    st.title("💼 Nagendra's Personal Job Outreach Assistant")
-    st.subheader("Generate Tailored Cold Emails for Software Engineering Roles")
+    st.title("🚀 Universal AI Job Outreach Assistant")
     
-    url_input = st.text_input("Paste the Job Posting URL:", placeholder="https://careers.company.com/job-link")
-    submit_button = st.button("Generate Application Email")
+    # User-specific inputs
+    col1, col2 = st.columns(2)
+    with col1:
+        user_name = st.text_input("Enter Your Full Name:", placeholder="e.g. Nagendra Kumar")
+    with col2:
+        github_user = st.text_input("Enter GitHub Username:", placeholder="e.g. nagendra31")
+
+    uploaded_file = st.file_uploader("Upload Your Resume (PDF)", type="pdf")
+
+    portfolio_file = st.file_uploader("Upload your Portfolio CSV", type="csv")
+    if portfolio_file:
+        portfolio = Portfolio(file_path=portfolio_file)
+
+    resume_text = ""
+    
+    if uploaded_file:
+        with open("temp_res.pdf", "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        loader = PyPDFLoader("temp_res.pdf")
+        resume_text = "\n".join([p.page_content for p in loader.load()])
+        os.remove("temp_res.pdf")
+        st.success("Resume context uploaded!")
+
+    url_input = st.text_input("Job Posting URL:")
+    submit_button = st.button("Generate Cold Email")
 
     if submit_button:
+        if not user_name or not resume_text:
+            st.warning("Please provide your name and upload a resume first.")
+            return
+
         try:
+            github_stats = get_github_data(github_user)
             loader = WebBaseLoader([url_input])
             data = clean_text(loader.load().pop().page_content)
             portfolio.load_portfolio()
             jobs = llm.extract_jobs(data)
+            
             for job in jobs:
-                skills = job.get('skills', [])
-                links = portfolio.query_links(skills)
-                email = llm.write_mail(job, links)
+                links = portfolio.query_links(job.get('skills', []))
+                email = llm.write_mail(job, links, resume_text, github_stats, user_name)
                 st.code(email, language='markdown')
         except Exception as e:
-            st.error(f"An Error Occurred: {e}")
-
+            st.error(f"Error: {e}")
 
 if __name__ == "__main__":
-    chain = Chain()
-    portfolio = Portfolio()
-    st.set_page_config(layout="wide", page_title="Cold Email Generator", page_icon="📧")
-    create_streamlit_app(chain, portfolio, clean_text)
-
+    st.set_page_config(layout="wide", page_title="Job Assistant")
+    create_streamlit_app(Chain(), Portfolio(), clean_text)
 
