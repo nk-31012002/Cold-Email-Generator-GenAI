@@ -18,9 +18,6 @@ To ensure the email is persuasive, the system uses a **Vector Database (ChromaDB
 - **Frontend:** Streamlit
 - **Web Scraping:** LangChain Community WebBaseLoader
 
-## 🏗️ Architecture
-
-
 ## 🚀 Set-up
 
 1. **Get your API Key:**
