@@ -28,7 +28,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def create_streamlit_app(llm, portfolio, clean_text):
-    st.title("🚀 Universal AI Job Outreach Assistant")
+    st.title("🚀JobReach.Ai | A Universal AI Job Outreach Assistant")
     
     # User-specific inputs
     col1, col2 = st.columns(2)
