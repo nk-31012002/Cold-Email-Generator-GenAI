@@ -20,11 +20,35 @@ def get_github_data(username):
 
 st.markdown("""
     <style>
+    /* Hide the standard Streamlit footer and header */
     .stAppDeployButton {display:none;}
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+
+    /* Fix the main container to prevent scrolling */
+    .main .block-container {
+        max-height: 100vh;
+        overflow: hidden;
+        padding-top: 2rem;
+        padding-bottom: 0rem;
+    }
+
+    /* Style for your "Created By Vision" footer */
+    .custom-footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: transparent;
+        color: #888;
+        text-align: center;
+        padding: 5px;
+        font-size: 12px;
+        z-index: 999;
+    }
     </style>
+    <div class="custom-footer">Created By Vision</div>
     """, unsafe_allow_html=True)
 
 def create_streamlit_app(llm, portfolio, clean_text):
@@ -78,4 +102,3 @@ def create_streamlit_app(llm, portfolio, clean_text):
 if __name__ == "__main__":
     st.set_page_config(layout="wide", page_title="Job Assistant")
     create_streamlit_app(Chain(), Portfolio(), clean_text)
-
